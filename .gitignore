@@ -1,5 +1,9 @@
-__pycache__/make_icon.cpython-312.pyc
+__pycache__/
+*.pyc
 /Notebook Importer.app
+*.zip
 test.ipynb
 icon.icns
+release.sh
 /.claude
+.DS_Store

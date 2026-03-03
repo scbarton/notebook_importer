@@ -1,9 +1,10 @@
 #!/bin/bash
 set -e
 
+VERSION="0.9"
+
 DIR="$(cd "$(dirname "$0")" && pwd)"
 OUT="$DIR/Notebook Importer.app"
-SIGN_ID="Developer ID Application: Scott Calabrese Barton (WR7X27PQB5)"
 
 # Regenerate icon
 /Users/scott/opt/venv/python3.12/bin/python "$DIR/make_icon.py"
@@ -26,7 +27,7 @@ echo "Built universal uv binary"
   --app-icon "$DIR/icon.icns" \
   --bundled-file "$DIR/import_ipynb.py" \
   --bundled-file "$DIR/uv" \
-  --app-version "1.0" \
+  --app-version "$VERSION" \
   --bundle-identifier "org.scott.notebook-importer" \
   --quit-after-execution \
   --overwrite \
@@ -42,30 +43,4 @@ plutil -replace CFBundleDocumentTypes -json \
   '[{"CFBundleTypeExtensions":["ipynb"],"CFBundleTypeRole":"Viewer"}]' \
   "$OUT/Contents/Info.plist"
 
-# Sign uv binary first, then the app bundle
-codesign --force --verify \
-  --sign "$SIGN_ID" \
-  --options runtime \
-  --entitlements "$DIR/entitlements.plist" \
-  "$OUT/Contents/Resources/uv"
-
-codesign --deep --force --verify \
-  --sign "$SIGN_ID" \
-  --options runtime \
-  --entitlements "$DIR/entitlements.plist" \
-  "$OUT"
-
-echo "Signed: $OUT"
-
-# Notarize
-ZIP="$DIR/Notebook Importer.zip"
-ditto -c -k --keepParent "$OUT" "$ZIP"
-xcrun notarytool submit "$ZIP" \
-  --keychain-profile "notarytool" \
-  --wait
-rm "$ZIP"
-
-# Staple
-xcrun stapler staple "$OUT"
-
-echo "Built, signed, and notarized: $OUT"
+echo "Built: $OUT (v$VERSION)"
