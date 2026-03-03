@@ -98,6 +98,12 @@ def import_notebook(ipynb_path: Path, prefs: dict) -> Path:
     note_dest = notes_root / f"{note_name}.md"
 
     asset_subdir = vault / prefs["assets_folder"] / note_name
+    asset_subdir.mkdir(parents=True, exist_ok=True)
+
+    # Copy source notebook as attachment
+    attachment_dest = asset_subdir / ipynb_path.name
+    shutil.copy2(ipynb_path, attachment_dest)
+    attachment_link = f"{note_name}/{ipynb_path.name}"
 
     # Convert notebook to markdown
     nb = nbformat.read(str(ipynb_path), as_version=4)
@@ -107,7 +113,6 @@ def import_notebook(ipynb_path: Path, prefs: dict) -> Path:
     # Save extracted output images (plots, etc.)
     outputs = resources.get("outputs", {})
     if outputs:
-        asset_subdir.mkdir(parents=True, exist_ok=True)
         for filename, data in outputs.items():
             (asset_subdir / filename).write_bytes(data)
 
@@ -117,7 +122,14 @@ def import_notebook(ipynb_path: Path, prefs: dict) -> Path:
             return f"![[{note_name}/{filename}]]"
         body = re.sub(r"!\[([^\]]*)\]\(([^)\s]+)\)", rewrite, body)
 
-    note_dest.write_text(body, encoding="utf-8")
+    # Prepend YAML frontmatter with source links
+    frontmatter = (
+        f"---\n"
+        f"source: \"{ipynb_path.resolve().as_uri()}\"\n"
+        f"notebook: \"[[{attachment_link}]]\"\n"
+        f"---\n\n"
+    )
+    note_dest.write_text(frontmatter + body, encoding="utf-8")
 
     vault_name = vault.name
     file_rel = str(note_dest.relative_to(vault).with_suffix(""))
