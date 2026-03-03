@@ -18,25 +18,36 @@ lipo -create /opt/homebrew/bin/uv /tmp/uv -output "$DIR/uv"
 rm /tmp/uv
 echo "Built universal uv binary"
 
+rm -rf "$OUT"
+
 /usr/local/bin/platypus \
   --name "Notebook Importer" \
   --interface-type "None" \
   --interpreter "/bin/bash" \
   --droppable \
   --suffixes "ipynb" \
-  --app-icon "$DIR/icon.icns" \
   --bundled-file "$DIR/import_ipynb.py" \
   --bundled-file "$DIR/uv" \
   --app-version "$VERSION" \
   --bundle-identifier "org.scott.notebook-importer" \
   --quit-after-execution \
-  --overwrite \
   "$DIR/import_ipynb.sh" \
   "$OUT"
 
 rm "$DIR/uv"
 
-# Patch Info.plist: extension-only, no UTI declarations
+# Replace Platypus-composited icon with raw icon
+cp "$DIR/icon.icns" "$OUT/Contents/Resources/AppIcon.icns"
+
+# Set custom Finder icon via NSWorkspace (same as dragging icon in Get Info)
+/usr/bin/python3 -c "
+import AppKit
+img = AppKit.NSImage.alloc().initWithContentsOfFile_('$DIR/icon.icns')
+AppKit.NSWorkspace.sharedWorkspace().setIcon_forFile_options_(img, '$OUT', 0)
+"
+
+# Patch Info.plist: icon, extension-only doc types, no UTI declarations
+plutil -replace CFBundleIconFile -string "AppIcon" "$OUT/Contents/Info.plist"
 plutil -remove UTExportedTypeDeclarations "$OUT/Contents/Info.plist" 2>/dev/null || true
 plutil -remove UTImportedTypeDeclarations "$OUT/Contents/Info.plist" 2>/dev/null || true
 plutil -replace CFBundleDocumentTypes -json \

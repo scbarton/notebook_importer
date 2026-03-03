@@ -66,6 +66,7 @@ On the very first import, `uv` installs `nbconvert` into its cache — this take
 ## Building from source
 
 Requirements:
+- Xcode Command Line Tools (`xcode-select --install`)
 - [Platypus](https://sveinbjorn.org/platypus) (`brew install --cask platypus`), with the command line tool installed via **Platypus → Install Command Line Tool**
 - [uv](https://github.com/astral-sh/uv) (`brew install uv`)
 - Python 3 with Pillow (for icon generation — `pip install Pillow`)
